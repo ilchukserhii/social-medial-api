@@ -35,6 +35,7 @@ class UserManagerSerializer(serializers.ModelSerializer):
             "id",
             "email",
             "password",
+            "nickname",
             "first_name",
             "last_name",
             "profile_pic",
@@ -74,6 +75,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
         model = get_user_model()
         fields = (
             "id",
+            "nickname",
             "first_name",
             "last_name",
             "profile_pic",

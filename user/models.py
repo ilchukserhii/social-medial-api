@@ -47,6 +47,12 @@ class UserManager(DjangoUserManager):
 class User(AbstractUser):
     username = None
     email = models.EmailField(unique=True)
+    nickname = models.CharField(
+        max_length=100,
+        unique=True,
+        null=True,
+        blank=True
+    )
     profile_pic = models.ImageField(
         upload_to=upload_to,
         null=True,

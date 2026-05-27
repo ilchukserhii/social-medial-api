@@ -42,11 +42,15 @@ class UserPublicView(
     mixins.ListModelMixin,
     GenericViewSet,
 ):
-    serializer_class = UserPublicSerializer
     queryset = User.objects.all()
+    serializer_class = UserPublicSerializer
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        name = self.request.query_params.get("name")
-        
+        nickname = self.request.query_params.get("nickname")
+        queryset = User.objects.all()
 
+        if nickname:
+            queryset = self.queryset.filter(nickname__icontains=nickname)
+
+        return queryset
