@@ -5,12 +5,12 @@ from user.views import CreateUserView, CreateTokenView, UserManageView, LogoutVi
 
 app_name = "user"
 router = routers.DefaultRouter()
-router.register("other-users", UserPublicView)
+router.register("users", UserPublicView)
 
 urlpatterns = [
-    path("register/", CreateUserView.as_view(), name="register"),
-    path("login/", CreateTokenView.as_view(), name="login"),
-    path("logout/", LogoutView.as_view(), name="logout"),
-    path("me/", UserManageView.as_view(), name="me"),
+    path("auth/register/", CreateUserView.as_view(), name="register"),
+    path("auth/login/", CreateTokenView.as_view(), name="login"),
+    path("auth/logout/", LogoutView.as_view(), name="logout"),
+    path("users/me/", UserManageView.as_view(), name="me"),
     path("", include(router.urls)),
 ]
