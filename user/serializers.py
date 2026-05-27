@@ -24,6 +24,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return get_user_model().objects.create_user(**validated_data)
 
 class UserManagerSerializer(serializers.ModelSerializer):
+    following = serializers.SlugRelatedField(
+        slug_field="email",
+        many=True,
+        read_only=True,
+    )
     class Meta:
         model = get_user_model()
         fields = (
@@ -35,23 +40,43 @@ class UserManagerSerializer(serializers.ModelSerializer):
             "profile_pic",
             "phone",
             "birth_date",
-            "bio"
+            "bio",
+            "following",
         )
         read_only_fields = ("id",)
         extra_kwargs = {
             "password": {
                 "write_only": True,
+                "required": False,
+                "allow_blank": True,
                 "style": {"input_type": "password"},
                 "min_length": 8,
             }
         }
 
-        def update(self, instance, validated_data):
-            password = validated_data.pop("password", None)
-            user = super().update(instance, validated_data)
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        user = super().update(instance, validated_data)
 
-            if password:
-                user.set_password(password)
-                user.save()
+        if password:
+            user.set_password(password)
+            user.save()
 
-            return user
+        return user
+
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    following = serializers.StringRelatedField(
+        read_only=True,
+        many=True,
+    )
+    class Meta:
+        model = get_user_model()
+        fields = (
+            "id",
+            "first_name",
+            "last_name",
+            "profile_pic",
+            "bio",
+            "following",
+        )

@@ -1,14 +1,16 @@
-from django.contrib.auth import logout
-from rest_framework import generics, status
+from django.contrib.auth import get_user_model
+from rest_framework import generics, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
-from user.serializers import UserCreateSerializer, UserManagerSerializer
+from user.serializers import UserCreateSerializer, UserManagerSerializer, UserPublicSerializer
 
+User = get_user_model()
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
@@ -28,8 +30,23 @@ class UserManageView(generics.RetrieveUpdateAPIView):
 
 
 class LogoutView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         request.user.auth_token.delete()
         return Response({"message": "Successfully logged out"}, status=200)
+
+
+class UserPublicView(
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    GenericViewSet,
+):
+    serializer_class = UserPublicSerializer
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        name = self.request.query_params.get("name")
+        
+
