@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Model
 from rest_framework import serializers
 
 
@@ -46,7 +47,7 @@ class UserManagerSerializer(serializers.ModelSerializer):
         }
 
         def update(self, instance, validated_data):
-            password = validated_data.pop("password")
+            password = validated_data.pop("password", None)
             user = super().update(instance, validated_data)
 
             if password:
