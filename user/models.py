@@ -1,4 +1,5 @@
 import pathlib
+import uuid
 
 from django.contrib.auth.models import (
     AbstractUser,
@@ -8,10 +9,10 @@ from django.db import models
 
 
 def upload_to(instance, filename):
-    user_name = instance.email.split("@")[0]
+    user_name = instance.nickname
 
     filename = (
-        f"{user_name}{pathlib.Path(filename).suffix}"
+        f"{user_name}{uuid.uuid4()}{pathlib.Path(filename).suffix}"
     )
 
     return pathlib.Path(f"uploads/{user_name}/") / filename
