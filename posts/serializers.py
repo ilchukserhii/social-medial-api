@@ -17,9 +17,9 @@ class CommentSerializer(serializers.ModelSerializer):
         fields = ("id", "content", "author", "post", "created_at")
 
 
-class PostSerializer(serializers.ModelSerializer):
+class PostListSerializer(serializers.ModelSerializer):
     tags = serializers.SerializerMethodField()
-    likes = serializers.StringRelatedField(many=True, read_only=True)
+    likes = serializers.IntegerField(read_only=True, source="likes.count")
     author = serializers.SlugRelatedField(slug_field="nickname", read_only=True)
     class Meta:
         model = Post
@@ -40,3 +40,23 @@ class PostSerializer(serializers.ModelSerializer):
         return [
             tag.name for tag in list_tags
         ]
+
+class PostCreateSerializer(serializers.ModelSerializer):
+    tags = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=Tag.objects.all(),
+        many=True,
+        required=False
+    )
+    author = serializers.SlugRelatedField(slug_field="nickname", read_only=True)
+    class Meta:
+        model = Post
+        fields = (
+            "id",
+            "title",
+            "content",
+            "author",
+            "tags",
+            "image",
+            "created_at"
+        )
