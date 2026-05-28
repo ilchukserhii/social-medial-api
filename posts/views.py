@@ -3,9 +3,9 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from posts.models import Post
+from posts.models import Post, Comment
 from posts.permissions import IsAuthorOrReadOnly
-from posts.serializers import PostCreateSerializer, PostListSerializer
+from posts.serializers import PostCreateSerializer, PostListSerializer, CommentSerializer, PostDetailSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -50,8 +50,10 @@ class PostViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
-        if self.action == "create":
+        if self.action in ("create", "update", "partial_update"):
             return PostCreateSerializer
+        elif self.action == "retrieve":
+            return PostDetailSerializer
         return PostListSerializer
 
     def perform_create(self, serializer):
@@ -78,3 +80,26 @@ class PostViewSet(viewsets.ModelViewSet):
             {"detail": "You have not liked this post."},
             status=400
         )
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        queryset = Comment.objects.select_related("author", "post")
+
+        post_pk = self.kwargs.get("post_pk")
+        if post_pk:
+            queryset = queryset.filter(post_id=post_pk)
+
+        return queryset
+
+    def perform_create(self, serializer):
+        post_pk = self.kwargs.get("post_pk")
+
+        if post_pk:
+            serializer.save(author=self.request.user, post_id=post_pk)
+        else:
+            serializer.save(author=self.request.user)
