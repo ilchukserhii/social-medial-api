@@ -9,9 +9,6 @@ router = routers.DefaultRouter()
 router.register("posts", PostViewSet, basename="post")
 router.register("comments", CommentViewSet, basename="comment")
 
-# urlpatterns = [
-#     path("", include(router.urls)),
-# ]
 urlpatterns = [
     path(
         "posts/<int:post_pk>/comments/",

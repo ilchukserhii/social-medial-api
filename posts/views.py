@@ -57,7 +57,7 @@ class PostViewSet(viewsets.ModelViewSet):
         else:
             queryset = queryset.filter(is_published=True)
 
-        return queryset
+        return queryset.order_by("-published_at")
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -108,7 +108,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         if post_pk:
             queryset = queryset.filter(post_id=post_pk)
 
-        return queryset
+        return queryset.order_by("-created_at")
 
     def perform_create(self, serializer):
         post_pk = self.kwargs.get("post_pk")
