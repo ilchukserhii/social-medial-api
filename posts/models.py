@@ -1,5 +1,6 @@
 import pathlib
 import uuid
+from django.utils import timezone
 
 from django.db import models
 
@@ -43,6 +44,12 @@ class Post(models.Model):
     scheduled_at = models.DateTimeField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     is_published = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if self.is_published and self.published_at is None:
+            self.published_at = timezone.now()
+
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return self.title

@@ -20,8 +20,9 @@ class PostViewSet(viewsets.ModelViewSet):
         content = self.request.query_params.get("content")
         author = self.request.query_params.get("author")
         liked = self.request.query_params.get("liked")
+        scheduled = self.request.query_params.get("scheduled")
         queryset = (
-            Post.objects.all()
+            Post.objects
             .select_related("author")
             .prefetch_related("tags", "likes", "comments")
         )
@@ -46,6 +47,15 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if liked == "true":
             queryset = queryset.filter(likes__isnull=False)
+
+        if scheduled == "true":
+            queryset = queryset.filter(
+                author=self.request.user,
+                is_published=False,
+                scheduled_at__isnull=False
+            )
+        else:
+            queryset = queryset.filter(is_published=True)
 
         return queryset
 

@@ -1,4 +1,5 @@
 from django.template.defaulttags import comment
+from django.utils import timezone
 from rest_framework import serializers
 
 from posts.models import Tag, Comment, Post
@@ -37,7 +38,7 @@ class PostListSerializer(serializers.ModelSerializer):
             "image",
             "likes",
             "comments",
-            "created_at"
+            "published_at"
         )
 
 
@@ -57,7 +58,7 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "image",
             "likes",
             "comments",
-            "created_at"
+            "published_at"
         )
 
     def get_comments(self, obj):
@@ -85,5 +86,11 @@ class PostCreateSerializer(serializers.ModelSerializer):
             "author",
             "tags",
             "image",
-            "created_at"
+            "scheduled_at"
         )
+
+    def create(self, validated_data):
+        if validated_data.get("scheduled_at") is None:
+            validated_data["is_published"] = True
+
+        return super().create(validated_data)
