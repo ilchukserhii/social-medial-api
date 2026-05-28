@@ -45,7 +45,7 @@ class Post(models.Model):
     is_published = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.title} {str(self.author)} {self.created_at}"
+        return self.title
 
 
 class Tag(models.Model):

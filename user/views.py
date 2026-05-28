@@ -1,8 +1,6 @@
 from django.contrib.admin import actions
 from django.contrib.auth import get_user_model
 from django.db.models import Q
-from django.template.defaultfilters import first
-from django.views.generic import detail
 from rest_framework import generics, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -37,7 +35,11 @@ class UserManageView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_object(self):
-        return self.request.user
+        return (
+            User.objects
+            .prefetch_related("following", "followers")
+            .get(id=self.request.user.id)
+        )
 
 
 class LogoutView(APIView):
@@ -61,7 +63,10 @@ class UserPublicView(
     def get_queryset(self):
         nickname = self.request.query_params.get("nickname")
         name = self.request.query_params.get("name")
-        queryset = User.objects.all()
+        queryset = User.objects.prefetch_related(
+            "following",
+            "followers",
+        )
 
         if nickname:
             queryset = self.queryset.filter(nickname__icontains=nickname)
@@ -72,7 +77,7 @@ class UserPublicView(
                 Q(last_name__icontains=name)
             )
 
-        return queryset.order_by("-date_joined")
+        return queryset.order_by("-date_joined").distinct()
 
     def get_serializer_class(self):
         if self.action == "retrieve":

@@ -21,9 +21,9 @@ class PostViewSet(viewsets.ModelViewSet):
         author = self.request.query_params.get("author")
         liked = self.request.query_params.get("liked")
         queryset = (
-            Post.objects.all().
-            select_related("author").
-            prefetch_related("tags", "likes")
+            Post.objects.all()
+            .select_related("author")
+            .prefetch_related("tags", "likes", "comments")
         )
 
         if owner == "true":
@@ -88,7 +88,11 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        queryset = Comment.objects.select_related("author", "post")
+        queryset = Comment.objects.select_related(
+            "author",
+            "post",
+            "post__author"
+        )
 
         post_pk = self.kwargs.get("post_pk")
         if post_pk:
