@@ -15,6 +15,11 @@ class PostViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         owner = self.request.query_params.get("owner")
         following = self.request.query_params.get("following")
+        tag = self.request.query_params.get("tag")
+        title = self.request.query_params.get("title")
+        content = self.request.query_params.get("content")
+        author = self.request.query_params.get("author")
+        liked = self.request.query_params.get("liked")
         queryset = (
             Post.objects.all().
             select_related("author").
@@ -26,6 +31,21 @@ class PostViewSet(viewsets.ModelViewSet):
 
         if following == "true":
             queryset = queryset.filter(author__followers=self.request.user)
+
+        if tag:
+            queryset = queryset.filter(tags__name__icontains=tag)
+
+        if title:
+            queryset = queryset.filter(title__icontains=title)
+
+        if content:
+            queryset = queryset.filter(content__icontains=content)
+
+        if author:
+            queryset = queryset.filter(author__nickname__icontains=author)
+
+        if liked == "true":
+            queryset = queryset.filter(likes__isnull=False)
 
         return queryset
 
