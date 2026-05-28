@@ -4,20 +4,29 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from posts.models import Post
+from posts.permissions import IsAuthorOrReadOnly
 from posts.serializers import PostCreateSerializer, PostListSerializer
-from user.models import User
 
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all()
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
 
     def get_queryset(self):
+        owner = self.request.query_params.get("owner")
+        following = self.request.query_params.get("following")
         queryset = (
             Post.objects.all().
             select_related("author").
             prefetch_related("tags", "likes")
         )
+
+        if owner == "true":
+            queryset = queryset.filter(author=self.request.user)
+
+        if following == "true":
+            queryset = queryset.filter(author__followers=self.request.user)
+
         return queryset
 
     def get_serializer_class(self):
