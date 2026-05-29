@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     "posts",
     "debug_toolbar",
     "drf_spectacular",
+    "django_celery_beat"
 ]
 
 MIDDLEWARE = [
@@ -153,3 +154,6 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
