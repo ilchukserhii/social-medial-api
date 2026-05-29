@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from posts.models import Tag, Comment, Post
@@ -96,7 +97,15 @@ class PostDetailSerializer(serializers.ModelSerializer):
             "published_at"
         )
 
-    def get_comments(self, obj):
+    @extend_schema_field(
+        {
+            "type": "array",
+            "items": {
+                "type": "object"
+            }
+        }
+    )
+    def get_comments(self, obj) -> list[dict]:
         comments = obj.comments.all()
 
         return [

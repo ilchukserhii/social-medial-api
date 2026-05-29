@@ -116,7 +116,7 @@ class UserPublicDetailSerializer(UserPublicListSerializer):
             "followers_list",
         )
 
-    def get_following_list(self, obj):
+    def get_following_list(self, obj) -> list[str]:
         following_list = obj.following.all()[:10]
 
         return [
@@ -124,7 +124,7 @@ class UserPublicDetailSerializer(UserPublicListSerializer):
             for following in following_list
         ]
 
-    def get_followers_list(self, obj):
+    def get_followers_list(self, obj) -> list[str]:
         followers_list = obj.followers.all()[:10]
 
         return [

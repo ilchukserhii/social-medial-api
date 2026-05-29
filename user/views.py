@@ -1,5 +1,11 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    extend_schema,
+    OpenApiParameter,
+    OpenApiResponse
+)
 from rest_framework import generics, mixins
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -45,6 +51,14 @@ class LogoutView(APIView):
     authentication_classes = (TokenAuthentication,)
     permission_classes = (IsAuthenticated,)
 
+    @extend_schema(
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="Successfully logged out"
+            )
+        },
+    )
     def post(self, request):
         request.user.auth_token.delete()
         return Response({"message": "Successfully logged out"}, status=200)
@@ -83,6 +97,37 @@ class UserPublicView(
             return UserPublicDetailSerializer
         return UserPublicListSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="nickname",
+                type=OpenApiTypes.STR,
+                description="filter by user's nickname "
+                            "(ex. ?nickname=user1)",
+            ),
+            OpenApiParameter(
+                name="first/last name",
+                type=OpenApiTypes.STR,
+                description="filter by user's first/last name "
+                            "(ex. ?name=Alex)",
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="You're now following this user"
+            ),
+            400: OpenApiResponse(
+                description="You cannot follow yourself"
+            ),
+        },
+        description="Follow user bu id"
+    )
     @action(detail=True, methods=["post"])
     def follow(self, request, pk=None):
         user_to_follow = self.get_object()
@@ -92,16 +137,25 @@ class UserPublicView(
                 status=400
             )
         if request.user.following.filter(pk=user_to_follow.id).exists():
-            return Response({"message": "You`re already following this user"})
+            return Response({"message": "You're already following this user"})
         request.user.following.add(user_to_follow)
-        return Response({"message": "You`re now following this user"})
+        return Response({"message": "You're now following this user"})
 
+    @extend_schema(
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="User unfollowed or was not followed"
+            ),
+        },
+        description="Unfollow user by id"
+    )
     @action(detail=True, methods=["post"])
     def unfollow(self, request, pk=None):
         user_to_unfollow = self.get_object()
         if request.user.following.filter(pk=user_to_unfollow.id).exists():
             request.user.following.remove(user_to_unfollow)
             return Response(
-                {"message": "You`re not following this user anymore"}
+                {"message": "You're not following this user anymore"}
             )
-        return Response({"message": "You`re not following this user"})
+        return Response({"message": "You're not following this user"})

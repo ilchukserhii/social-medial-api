@@ -1,3 +1,5 @@
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiResponse
 from rest_framework.decorators import action
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
@@ -75,6 +77,73 @@ class PostViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="owner",
+                type=OpenApiTypes.BOOL,
+                description="Filter list of posts by owner "
+                            "(ex. ?owner=true)"
+            ),
+            OpenApiParameter(
+                name="following",
+                type=OpenApiTypes.BOOL,
+                description="Filter list of posts by following users "
+                            "(ex. ?following=true)"
+            ),
+            OpenApiParameter(
+                name="tag",
+                type=OpenApiTypes.STR,
+                description="Filter list of posts by tag name "
+                            "(ex. ?tag=something)"
+            ),
+            OpenApiParameter(
+                name="title",
+                type=OpenApiTypes.STR,
+                description="Filter list of posts by title "
+                            "(ex. ?title=something)"
+            ),
+            OpenApiParameter(
+                name="content",
+                type=OpenApiTypes.STR,
+                description="Filter list of posts by content "
+                            "(ex. ?content=something)"
+            ),
+            OpenApiParameter(
+                name="author",
+                type=OpenApiTypes.STR,
+                description="Filter list of posts by author nickname "
+                            "(ex. ?author=CrazyAuthor)"
+            ),
+            OpenApiParameter(
+                name="liked",
+                type=OpenApiTypes.BOOL,
+                description="Filter list of posts by liked posts "
+                            "(ex. ?liked=true)"
+            ),
+            OpenApiParameter(
+                name="scheduled",
+                type=OpenApiTypes.BOOL,
+                description="Filter list of posts by scheduled posts "
+                            "(ex. ?scheduled=true)"
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="You have liked this post",
+            ),
+            400: OpenApiResponse(
+                description="You have already liked this post",
+            )
+        },
+        description="Like post by id"
+    )
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):
         put_like = self.get_object()
@@ -86,6 +155,18 @@ class PostViewSet(viewsets.ModelViewSet):
         put_like.likes.add(request.user)
         return Response({"detail": "You have liked this post."})
 
+    @extend_schema(
+        request=None,
+        responses={
+            200: OpenApiResponse(
+                description="You have disliked this post",
+            ),
+            400: OpenApiResponse(
+                description="You have not liked this post",
+            )
+        },
+        description="Dislike post by id"
+    )
     @action(detail=True, methods=["post"])
     def dislike(self, request, pk=None):
         dislike = self.get_object()
