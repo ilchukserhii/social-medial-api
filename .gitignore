@@ -17,7 +17,6 @@ staticfiles/
 
 # Environment variables
 .env
-.env.*
 
 # IDE
 .idea/
