@@ -1,5 +1,8 @@
+import os
+import tempfile
 from datetime import timedelta
 
+from PIL import Image
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -10,6 +13,7 @@ from rest_framework.test import APIClient
 from posts.serializers import PostCreateSerializer, PostListSerializer, PostDetailSerializer
 
 from posts.models import Post, Tag, Comment
+from posts.post_planner import post_planner
 
 POST_URL = reverse("posts:post-list")
 COMMENT_URL = reverse("posts:comment-list")
@@ -281,6 +285,54 @@ class AuthorizedPostViewTest(TestCase):
         serializer_2 = PostListSerializer(post_2)
         self.assertIn(serializer.data, response.data["results"])
         self.assertNotIn(serializer_2.data, response.data["results"])
+
+    def test_create_post_by_author(self):
+        payload = {
+            "title": "test post",
+            "content": "test post",
+            "author": self.user
+        }
+        response = self.client.post(POST_URL, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["title"], payload["title"])
+        self.assertEqual(response.data["author"], self.user.nickname)
+
+    def test_update_post_by_author(self):
+        post = sample_post(author=self.user)
+        payload = {
+            "title": "updated post",
+        }
+        response = self.client.patch(detail_url(post.id), payload)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], payload["title"])
+
+    def test_create_post_with_image(self):
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as tmp:
+            img = Image.new("RGB", (10, 10))
+            img.save(tmp, "JPEG")
+            tmp.seek(0)
+            payload = {
+                "title": "test post",
+                "content": "test post",
+                "author": self.user,
+                "image": tmp
+            }
+            response = self.client.post(POST_URL, payload)
+        post = Post.objects.first()
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIn("image", response.data)
+        self.assertTrue(os.path.exists(post.image.path))
+
+    def test_post_planner(self):
+        post = sample_post(
+            author=self.user,
+            is_published=False,
+            scheduled_at=timezone.now() - timedelta(hours=1)
+        )
+        post_planner()
+        post.refresh_from_db()
+        self.assertEqual(post.is_published, True)
+        self.assertIsNotNone(post.published_at)
 
 
 class CommentsTest(TestCase):
