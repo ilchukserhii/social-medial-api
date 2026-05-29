@@ -10,16 +10,23 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from posts.serializers import PostCreateSerializer, PostListSerializer, PostDetailSerializer
+from posts.serializers import (
+    PostCreateSerializer,
+    PostListSerializer,
+    PostDetailSerializer
+)
 
 from posts.models import Post, Tag, Comment
 from posts.post_planner import post_planner
 
+
 POST_URL = reverse("posts:post-list")
 COMMENT_URL = reverse("posts:comment-list")
 
+
 def detail_url(post_id):
     return reverse("posts:post-detail", args=[post_id])
+
 
 def sample_user(**params):
     defaults = {
@@ -31,6 +38,7 @@ def sample_user(**params):
     }
     defaults.update(params)
     return get_user_model().objects.create_user(**defaults)
+
 
 def sample_post(**params):
     author = params.pop("author", None) or sample_user()
@@ -83,6 +91,7 @@ class PostSerializerTest(TestCase):
         self.assertIsNotNone(post.published_at)
         self.assertIn(tag, post.tags.all())
 
+
 class UnauthorizedPostViewTest(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -90,6 +99,7 @@ class UnauthorizedPostViewTest(TestCase):
     def test_auth_required(self):
         response = self.client.get(POST_URL)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
 
 class AuthorizedPostViewTest(TestCase):
     def setUp(self):
@@ -103,12 +113,12 @@ class AuthorizedPostViewTest(TestCase):
 
     def test_post_list(self):
         tag = Tag.objects.create(name="test")
-        post = sample_post(tags=[tag])
+        sample_post(tags=[tag])
         author2 = sample_user(
             email="user1@email.com",
             nickname="author2"
         )
-        post_2 = sample_post(
+        sample_post(
             title="title2",
             content="content2",
             author=author2,
@@ -234,7 +244,7 @@ class AuthorizedPostViewTest(TestCase):
 
     def test_like_post(self):
         post = sample_post()
-        post_2 = sample_post(author=self.user)
+        sample_post(author=self.user)
         response = self.client.post(
             reverse("posts:post-like", args=[post.id])
         )
@@ -243,7 +253,7 @@ class AuthorizedPostViewTest(TestCase):
 
     def test_like_twice_unavailable_post(self):
         post = sample_post()
-        post_2 = sample_post(author=self.user)
+        sample_post(author=self.user)
         post.likes.add(self.user)
         response = self.client.post(
             reverse("posts:post-like", args=[post.id])

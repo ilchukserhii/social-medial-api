@@ -2,17 +2,22 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase, APIClient
+from rest_framework.test import APITestCase
 from rest_framework.authtoken.models import Token
 
 from user.models import User
-from user.serializers import UserManagerSerializer, UserPublicListSerializer, UserPublicDetailSerializer
-
+from user.serializers import (
+    UserManagerSerializer,
+    UserPublicListSerializer,
+    UserPublicDetailSerializer
+)
 
 PUBLIC_LIST_URL = reverse("user:users-list")
 
+
 def public_detail_url(user_id):
     return reverse("user:users-detail", args=[user_id])
+
 
 def sample_public_user(**params):
     defaults = {
@@ -71,7 +76,7 @@ class UserCreateLoginLogoutViewTest(APITestCase):
             "username": "user@email.com",
             "password": "password",
         }
-        login_response = self.client.post(reverse("user:login"), payload)
+        self.client.post(reverse("user:login"), payload)
         token = Token.objects.get(user=user)
         self.client.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
         logout_response = self.client.post(reverse("user:logout"))
@@ -122,8 +127,8 @@ class UserManagePublicViewTest(APITestCase):
         )
 
     def test_user_public_list_view(self):
-        user_1 = sample_public_user()
-        user_2 = get_user_model().objects.create_user(
+        sample_public_user()
+        get_user_model().objects.create_user(
             email="user2@email.com",
             password="password2",
             first_name="firstname",
@@ -200,7 +205,7 @@ class UserManagePublicViewTest(APITestCase):
 
     def test_public_user_cant_follow_twice(self):
         user_1 = sample_public_user()
-        response_1 = self.client.post(
+        self.client.post(
             reverse(
                 "user:users-follow",
                 args=[user_1.id]
@@ -220,15 +225,26 @@ class UserManagePublicViewTest(APITestCase):
     def test_public_user_unfollow(self):
         user_1 = sample_public_user()
         user_1.followers.add(self.user)
-        response = self.client.post(reverse("user:users-unfollow", args=[user_1.id]))
+        response = self.client.post(
+            reverse(
+                "user:users-unfollow",
+                args=[user_1.id]
+            )
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             response.data["message"],
-        "You`re not following this user anymore")
+            "You`re not following this user anymore"
+        )
 
     def test_public_user_cant_unfollow_user_that_not_follow(self):
         user_1 = sample_public_user()
-        response = self.client.post(reverse("user:users-unfollow", args=[user_1.id]))
+        response = self.client.post(
+            reverse(
+                "user:users-unfollow",
+                args=[user_1.id]
+            )
+        )
         self.assertEqual(
             response.data["message"],
             "You`re not following this user"

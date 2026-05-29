@@ -22,12 +22,19 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return get_user_model().objects.create_user(**validated_data)
 
+
 class UserManagerSerializer(serializers.ModelSerializer):
     following = serializers.SlugRelatedField(
-        slug_field="email",
+        slug_field="nickname",
         many=True,
         read_only=True,
     )
+    followers = serializers.SlugRelatedField(
+        slug_field="nickname",
+        many=True,
+        read_only=True,
+    )
+
     class Meta:
         model = get_user_model()
         fields = (
@@ -42,6 +49,7 @@ class UserManagerSerializer(serializers.ModelSerializer):
             "birth_date",
             "bio",
             "following",
+            "followers",
         )
         read_only_fields = ("id",)
         extra_kwargs = {
@@ -74,6 +82,7 @@ class UserPublicListSerializer(serializers.ModelSerializer):
         read_only=True,
         source="followers.count"
     )
+
     class Meta:
         model = get_user_model()
         fields = (
@@ -87,9 +96,11 @@ class UserPublicListSerializer(serializers.ModelSerializer):
             "followers",
         )
 
+
 class UserPublicDetailSerializer(UserPublicListSerializer):
     following_list = serializers.SerializerMethodField()
     followers_list = serializers.SerializerMethodField()
+
     class Meta:
         model = get_user_model()
         fields = (

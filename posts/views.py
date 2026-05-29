@@ -5,7 +5,13 @@ from rest_framework.response import Response
 
 from posts.models import Post, Comment
 from posts.permissions import IsAuthorOrReadOnly
-from posts.serializers import PostCreateSerializer, PostListSerializer, CommentSerializer, PostDetailSerializer
+from posts.serializers import (
+    PostCreateSerializer,
+    PostListSerializer,
+    PostDetailSerializer,
+    CommentWriteSerializer,
+    CommentReadSerializer
+)
 
 
 class PostViewSet(viewsets.ModelViewSet):
@@ -46,7 +52,7 @@ class PostViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(author__nickname__icontains=author)
 
         if liked == "true":
-            queryset = queryset.filter(likes__isnull=False)
+            queryset = queryset.filter(likes=self.request.user)
 
         if scheduled == "true":
             queryset = queryset.filter(
@@ -72,7 +78,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def like(self, request, pk=None):
         put_like = self.get_object()
-        if put_like.likes.filter(nickname=request.user.nickname).exists():
+        if put_like.likes.filter(pk=request.user.pk).exists():
             return Response(
                 {"detail": "You have already liked this post."},
                 status=400
@@ -83,7 +89,7 @@ class PostViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def dislike(self, request, pk=None):
         dislike = self.get_object()
-        if dislike.likes.filter(nickname=request.user.nickname).exists():
+        if dislike.likes.filter(pk=request.user.pk).exists():
             dislike.likes.remove(request.user)
             return Response({"detail": "You have disliked this post."})
         return Response(
@@ -95,7 +101,6 @@ class PostViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
-    serializer_class = CommentSerializer
 
     def get_queryset(self):
         queryset = Comment.objects.select_related(
@@ -109,6 +114,11 @@ class CommentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(post_id=post_pk)
 
         return queryset.order_by("-created_at")
+
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update"):
+            return CommentWriteSerializer
+        return CommentReadSerializer
 
     def perform_create(self, serializer):
         post_pk = self.kwargs.get("post_pk")

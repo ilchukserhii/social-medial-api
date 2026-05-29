@@ -1,7 +1,13 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from user.views import CreateUserView, CreateTokenView, UserManageView, LogoutView, UserPublicView
+from user.views import (
+    CreateUserView,
+    CreateTokenView,
+    UserManageView,
+    LogoutView,
+    UserPublicView
+)
 
 app_name = "user"
 router = routers.DefaultRouter()

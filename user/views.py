@@ -1,4 +1,3 @@
-from django.contrib.admin import actions
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from rest_framework import generics, mixins
@@ -11,7 +10,6 @@ from rest_framework.settings import api_settings
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
-from user.models import User
 from user.serializers import (
     UserCreateSerializer,
     UserManagerSerializer,
@@ -20,6 +18,7 @@ from user.serializers import (
 )
 
 User = get_user_model()
+
 
 class CreateUserView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
@@ -69,10 +68,10 @@ class UserPublicView(
         )
 
         if nickname:
-            queryset = self.queryset.filter(nickname__icontains=nickname)
+            queryset = queryset.filter(nickname__icontains=nickname)
 
         if name:
-            queryset = self.queryset.filter(
+            queryset = queryset.filter(
                 Q(first_name__icontains=name) |
                 Q(last_name__icontains=name)
             )
@@ -88,7 +87,10 @@ class UserPublicView(
     def follow(self, request, pk=None):
         user_to_follow = self.get_object()
         if user_to_follow == request.user:
-            return Response({"message": "You cannot follow yourself"}, status=400)
+            return Response(
+                {"message": "You cannot follow yourself"},
+                status=400
+            )
         if request.user.following.filter(pk=user_to_follow.id).exists():
             return Response({"message": "You`re already following this user"})
         request.user.following.add(user_to_follow)
@@ -99,7 +101,7 @@ class UserPublicView(
         user_to_unfollow = self.get_object()
         if request.user.following.filter(pk=user_to_unfollow.id).exists():
             request.user.following.remove(user_to_unfollow)
-            return Response({"message": "You`re not following this user anymore"})
+            return Response(
+                {"message": "You`re not following this user anymore"}
+            )
         return Response({"message": "You`re not following this user"})
-
-
