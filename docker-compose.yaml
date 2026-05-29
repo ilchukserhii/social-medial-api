@@ -1,0 +1,89 @@
+services:
+  db:
+    image: postgres:17-alpine
+    volumes:
+      - .data/db:/var/lib/postgresql/data
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    build:
+      context: .
+    env_file:
+      - .env
+    volumes:
+      - ./:/app
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./:/app
+      - social_media:/app/media
+      - social_static:/app/static
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  redis:
+    image: "redis:alpine"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             celery -A social_media_api worker -l INFO"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: on-failure
+    env_file:
+      - .env
+
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py wait_for_db &&
+             celery -A social_media_api beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    restart: on-failure
+    env_file:
+      - .env
+
+volumes:
+  social_media:
+  social_static:
